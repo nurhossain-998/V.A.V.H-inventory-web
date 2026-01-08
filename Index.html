@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.A.V.H Studio - Inventory System v9</title>
+    <style>
+        :root {
+            --primary: #0078D7;
+            --primary-dark: #005a9e;
+            --success: #28A745;
+            --danger: #DC3545;
+            --warning: #ffc107;
+            --bg: #f4f6f9;
+            --sidebar: #343a40;
+            --text-light: #f8f9fa;
+            --card-bg: #ffffff;
+            --border: #dee2e6;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg); height: 100vh; display: flex; flex-direction: column; }
+
+        /* --- LOGIN SCREEN --- */
+        #login-screen { 
+            position: fixed; width: 100%; height: 100%; background: var(--bg); 
+            display: flex; justify-content: center; align-items: center; z-index: 1000; 
+        }
+        .login-box { 
+            background: white; padding: 2.5rem; border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 400px; text-align: center; 
+        }
+        .login-box h1 { margin-bottom: 1.5rem; color: #333; font-weight: 700; }
+        .login-box input { 
+            width: 100%; padding: 12px; margin: 8px 0; 
+            border: 1px solid var(--border); border-radius: 6px; outline: none;
+        }
+        
+        /* --- MAIN LAYOUT --- */
+        #app-container { display: none; height: 100vh; } 
+        aside { 
+            width: 260px; background-color: var(--sidebar); color: var(--text-light); 
+            display: flex; flex-direction: column; 
+        }
+        aside .brand { padding: 25px 20px; font-size: 1.3rem; font-weight: bold; border-bottom: 1px solid #4b545c; }
+        aside nav { flex: 1; margin-top: 10px; }
+        aside nav button { 
+            background: none; border: none; color: #c2c7d0; width: 100%; text-align: left; 
+            padding: 15px 20px; cursor: pointer; font-size: 1rem; transition: 0.2s; 
+        }
+        aside nav button.active { background-color: var(--primary); color: white; border-left: 4px solid white; }
+
+        .logout-section { padding: 20px; border-top: 1px solid #4b545c; }
+        .btn-logout { 
+            width: 100%; padding: 10px; background: transparent; border: 1px solid #6c757d; 
+            color: #c2c7d0; border-radius: 6px; cursor: pointer;
+        }
+
+        main { flex: 1; padding: 25px; overflow-y: auto; }
+
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 20px; border-left: 5px solid var(--primary); border-radius: 6px; }
+        .stat-card p { font-size: 1.8rem; font-weight: bold; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9fa; padding: 15px; text-align: left; border-bottom: 2px solid var(--border); }
+        td { padding: 15px; border-bottom: 1px solid var(--border); }
+
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-edit { background: #ffc107; color: #212529; font-size: 0.8rem; }
+        
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 500px; }
+        .hidden { display: none !important; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h1>V.A.V.H Studio</h1>
+            <input type="text" id="login-user" placeholder="Username">
+            <input type="password" id="login-pass" placeholder="Password">
+            <button class="btn btn-primary" style="width:100%; margin-top: 15px;" onclick="handleLogin()">Login</button>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <aside>
+            <div class="brand">V.A.V.H Inventory</div>
+            <nav>
+                <button onclick="navTo('dashboard')" id="nav-dashboard" class="active">📊 Dashboard</button>
+                <button onclick="navTo('inventory')" id="nav-inventory">📦 Inventory</button>
+                <button onclick="navTo('orders')" id="nav-orders">🛒 Orders</button>
+                <button onclick="navTo('customers')" id="nav-customers">👥 Customers</button>
+                <button onclick="navTo('manage')" id="nav-manage">⚙️ Manage</button>
+            </nav>
+            <div class="logout-section"><button class="btn-logout" onclick="handleLogout()">🔒 Logout</button></div>
+        </aside>
+
+        <main>
+            <section id="tab-dashboard">
+                <h2>Dashboard Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card" style="border-left-color: var(--primary);"><h3>Items</h3><p id="stat-items">0</p></div>
+                    <div class="stat-card" style="border-left-color: var(--danger);"><h3>Low Stock</h3><p id="stat-low">0</p></div>
+                    <div class="stat-card" style="border-left-color: var(--warning);"><h3>Orders</h3><p id="stat-proc">0</p></div>
+                    <div class="stat-card" style="border-left-color: var(--success);"><h3>Sales</h3><p id="stat-sales">$0.00</p></div>
+                </div>
+            </section>
+
+            <section id="tab-customers" class="hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>Customer List</h2>
+                    <button class="btn btn-primary" onclick="openCustomerModal()">+ Add Customer</button>
+                </div>
+                <div class="card">
+                    <table id="cust-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Address</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="tab-inventory" class="hidden"><h2>Inventory</h2></section>
+            <section id="tab-orders" class="hidden"><h2>Orders</h2></section>
+            <section id="tab-manage" class="hidden"><h2>Manage</h2></section>
+        </main>
+    </div>
+
+    <div id="modal-customer" class="modal">
+        <div class="modal-content">
+            <h3 id="cust-modal-title">Add Customer</h3>
+            <input type="hidden" id="edit-cust-index">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="cust-name" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" id="cust-phone" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="cust-email" class="form-control" placeholder="-">
+            </div>
+            <div class="form-group">
+                <label>Address</label>
+                <input type="text" id="cust-address" class="form-control" placeholder="-">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn btn-success" style="flex:1" onclick="saveCustomer()">Save Customer</button>
+                <button class="btn" style="flex:1; background:#eee" onclick="closeModal('modal-customer')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('vavh_v9')) || { items: [], categories: ['General'], suppliers: [], customers: [], orders: [] };
+        const save = () => localStorage.setItem('vavh_v9', JSON.stringify(db));
+
+        // AUTH
+        function handleLogin() {
+            if(id('login-user').value === "admin" && id('login-pass').value === "admin123") {
+                id('login-screen').style.display = 'none';
+                id('app-container').style.display = 'flex';
+                renderDashboard();
+            }
+        }
+        function handleLogout() { id('app-container').style.display = 'none'; id('login-screen').style.display = 'flex'; }
+
+        // NAVIGATION
+        function navTo(tab) {
+            document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('aside nav button').forEach(b => b.classList.remove('active'));
+            id('tab-'+tab).classList.remove('hidden');
+            id('nav-'+tab).classList.add('active');
+            if(tab === 'customers') renderCustomers();
+            if(tab === 'dashboard') renderDashboard();
+        }
+
+        // CUSTOMER LOGIC
+        function renderCustomers() {
+            const tbody = id('cust-table').querySelector('tbody');
+            tbody.innerHTML = db.customers.map((c, index) => `
+                <tr>
+                    <td>${c.name}</td>
+                    <td>${c.phone}</td>
+                    <td>${c.email || '-'}</td>
+                    <td>${c.address || '-'}</td>
+                    <td>
+                        <button class="btn btn-edit" onclick="editCustomer(${index})">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openCustomerModal() {
+            id('cust-modal-title').innerText = "Add Customer";
+            id('edit-cust-index').value = "";
+            id('cust-name').value = "";
+            id('cust-phone').value = "";
+            id('cust-email').value = "";
+            id('cust-address').value = "";
+            openModal('modal-customer');
+        }
+
+        function editCustomer(index) {
+            const c = db.customers[index];
+            id('cust-modal-title').innerText = "Edit Customer";
+            id('edit-cust-index').value = index;
+            id('cust-name').value = c.name;
+            id('cust-phone').value = c.phone;
+            id('cust-email').value = c.email || "";
+            id('cust-address').value = c.address || "";
+            openModal('modal-customer');
+        }
+
+        function saveCustomer() {
+            const index = id('edit-cust-index').value;
+            const customerData = {
+                name: id('cust-name').value,
+                phone: id('cust-phone').value,
+                email: id('cust-email').value,
+                address: id('cust-address').value
+            };
+
+            if(index === "") {
+                db.customers.push(customerData);
+            } else {
+                db.customers[index] = customerData;
+            }
+
+            save();
+            closeModal('modal-customer');
+            renderCustomers();
+        }
+
+        // HELPERS
+        function id(i) { return document.getElementById(i); }
+        function openModal(m) { id(m).style.display='flex'; }
+        function closeModal(m) { id(m).style.display='none'; }
+        function renderDashboard() {
+            id('stat-items').innerText = db.items.length;
+            id('stat-proc').innerText = db.orders.filter(o => o.status === 'Processing').length;
+            id('stat-sales').innerText = "$" + db.orders.filter(o => o.status === 'Completed').reduce((a,b)=>a+b.total, 0).toFixed(2);
+            id('stat-low').innerText = db.items.filter(i => i.qty <= (i.minLevel || 5)).length;
+        }
+    </script>
+</body>
+</html>
